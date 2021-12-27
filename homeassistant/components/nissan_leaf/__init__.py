@@ -10,6 +10,7 @@ import voluptuous as vol
 
 from homeassistant.const import CONF_PASSWORD, CONF_REGION, CONF_USERNAME
 from homeassistant.core import callback
+from homeassistant.exceptions import ConfigEntryAuthFailed
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import load_platform
 from homeassistant.helpers.dispatcher import (
@@ -148,18 +149,18 @@ def setup(hass, config):
             # homeassistant to be slow to start
             sess = Session(username, password, region)
             leaf = sess.get_leaf()
-        except KeyError:
+        except KeyError as exc:
             _LOGGER.error(
                 "Unable to fetch car details..."
                 " do you actually have a Leaf connected to your account?"
             )
-            return False
-        except CarwingsError:
+            raise ConfigEntryAuthFailed() from exc
+        except CarwingsError as exc:
             _LOGGER.error(
                 "An unknown error occurred while connecting to Nissan: %s",
                 sys.exc_info()[0],
             )
-            return False
+            raise ConfigEntryAuthFailed() from exc
 
         _LOGGER.warning(
             "WARNING: This may poll your Leaf too often, and drain the 12V"
